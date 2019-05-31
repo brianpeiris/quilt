@@ -3,7 +3,24 @@
 body {
   font-family: "Benton Sans", "Helvetica Neue", helvetica, arial, sans-serif;
   margin: 2em;
+  display: flex;
 }
+
+#stage, #avatar, #controls {
+  margin: 1em;
+}
+#export { display: block; }
+
+#controls {
+  display: flex;
+  flex-direction: column;
+}
+
+#controls > * {
+  margin: 1em;
+}
+
+#layers { width: 13em; }
 
 h1 {
   font-style: italic;

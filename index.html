@@ -2,18 +2,27 @@
 <html lang="en">
   <head>
     <title>Hello!</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/style.css">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/style.css" />
     <script src="https://unpkg.com/three@0.105.1/build/three.min.js" defer></script>
     <script src="https://unpkg.com/three@0.105.1/examples/js/loaders/GLTFLoader.js" defer></script>
     <script src="https://unpkg.com/three@0.105.1/examples/js/controls/OrbitControls.js" defer></script>
     <script src="https://unpkg.com/konva@3.3.1/konva.min.js" defer></script>
     <script src="/script.js" defer></script>
-  </head>  
+  </head>
   <body>
-    <input type="file" id="glbfile" />
     <div id="stage"></div>
+    <div id="controls">
+      <div id="layerControls">
+        <button id="moveDown">🔻</button>
+        <button id="moveUp">🔺</button>
+        <button id="toggleVisibility">👻</button>
+        <button id="delete">❌</button>
+      </div>
+      <select id="layers" size="10"></select>
+      <button id="export">export</button>
+    </div>
     <div class="glitchButton" style="position:fixed;bottom:20px;right:20px;"></div>
     <script src="https://button.glitch.me/button.js"></script>
   </body>
