@@ -27,9 +27,10 @@ function loadGLB(url) {
     const uvs = geo.attributes.uv.array;
     const index = geo.index.array;
     for (let i = 0; i < index.length; i+=3){
-      ctx.lineTo(uvs[index[i]] * window.uv.width, uvs[index[i] + 1] * window.uv.height);
+      ctx.moveTo(uvs[index[i]] * window.uv.width, uvs[index[i] + 1] * window.uv.height);
       ctx.lineTo(uvs[index[i + 1]] * window.uv.width, uvs[index[i + 1] + 1] * window.uv.height);
       ctx.lineTo(uvs[index[i + 2]] * window.uv.width, uvs[index[i + 2] + 1] * window.uv.height);
+      ctx.lineTo(uvs[index[i]] * window.uv.width, uvs[index[i] + 1] * window.uv.height);
     }
     ctx.stroke();
   })
