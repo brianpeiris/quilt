@@ -21,12 +21,17 @@ function animate(){
 window.stage.addEventListener('dragover', e => e.preventDefault())
 window.stage.addEventListener('drop', e => {
   e.preventDefault()
-  const data = e.dataTransfer.getData("text/png");
-  console.log(data);
+  const img = document.createElement("img");
+  img.onload = () => {
   const layer = new Konva.Layer();
-  const image = new Konva.Image({image: data});
+  const image = new Konva.Image({image: img});
+image.draggable(true)
   layer.add(image)
+const tr = new Konva.Transformer({node: image});
+    layer.add(tr);
   stage.add(layer)
+  }
+  img.src = URL.createObjectURL(e.dataTransfer.files[0]);
 })
 const stage = new Konva.Stage({
   container: 'stage',   // id of container <div>
@@ -84,10 +89,11 @@ function loadGLB(url) {
       mesh.material.map.needsUpdate = true;
     }
 setInterval(()=>{
-  imglayer.canvas._canvas.toBlob(blob =>{
+  stage.toCanvas().toBlob(blob =>{
     mesh.material.map.image.src = URL.createObjectURL(blob);
   })
-}, 100)
+  });
+}, 1000)
   })
 }
 loadGLB("https://cdn.glitch.com/31df4c32-0e35-4740-8569-69390991ffeb%2FAvatarBot_Base.glb");
