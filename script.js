@@ -19,17 +19,22 @@ function animate(){
   renderer.render(scene, camera);
 }
 const ctx = window.uv.getContext("2d");
-window.glbfile.onchange = () => {
-  new THREE.GLTFLoader().load(URL.createObjectURL(window.glbfile.files[0]), gltf => {
+function loadGLB(url) {
+  
+  new THREE.GLTFLoader().load(url, gltf => {
     scene.add(gltf.scene);
     const geo = gltf.scene.getObjectByProperty("type", "SkinnedMesh").geometry;
     const uvs = geo.attributes.uv.array;
-    const index = geo.index;
-    for (let i = 0; i < index.count; i+=3){
-      ctx.lineTo(uvs[i] * window.uv.width, uvs[i + 1] * window.uv.height);
-      ctx.lineTo(uvs[i + 2] * window.uv.width, uvs[i + 3] * window.uv.height);
-      ctx.lineTo(uvs[i + 4] * window.uv.width, uvs[i + 5] * window.uv.height);
+    const index = geo.index.array;
+    for (let i = 0; i < index.length; i+=3){
+      ctx.lineTo(uvs[index[i]] * window.uv.width, uvs[index[i] + 1] * window.uv.height);
+      ctx.lineTo(uvs[index[i + 1]] * window.uv.width, uvs[index[i + 1] + 1] * window.uv.height);
+      ctx.lineTo(uvs[index[i + 2]] * window.uv.width, uvs[index[i + 2] + 1] * window.uv.height);
     }
     ctx.stroke();
   })
+}
+loadGLB("https://cdn.glitch.com/31df4c32-0e35-4740-8569-69390991ffeb%2FAvatarBot_Base.glb");
+window.glbfile.onchange = () => {
+  loadGLB(URL.createObjectURL(window.glbfile.files[0]))
 };
