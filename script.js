@@ -22,9 +22,13 @@ const ctx = window.uv.getContext("2d");
 window.glbfile.onchange = () => {
   new THREE.GLTFLoader().load(URL.createObjectURL(window.glbfile.files[0]), gltf => {
     scene.add(gltf.scene);
-    const uvs = gltf.scene.getObjectByProperty("type", "SkinnedMesh").geometry.attributes.uv.array;
-    for (let i = 0; i < uvs.length / 2; i+=2){
+    const geo = gltf.scene.getObjectByProperty("type", "SkinnedMesh").geometry;
+    const uvs = geo.attributes.uv.array;
+    const index = geo.index;
+    for (let i = 0; i < index.count; i+=3){
       ctx.lineTo(uvs[i] * window.uv.width, uvs[i + 1] * window.uv.height);
+      ctx.lineTo(uvs[i + 2] * window.uv.width, uvs[i + 3] * window.uv.height);
+      ctx.lineTo(uvs[i + 4] * window.uv.width, uvs[i + 5] * window.uv.height);
     }
     ctx.stroke();
   })
