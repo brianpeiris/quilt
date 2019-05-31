@@ -1,5 +1,6 @@
 /* global THREE, Konva */
 const renderer = new THREE.WebGLRenderer();
+renderer.setClearColor(0xaaaaaa)
 document.body.append(renderer.domElement);
 const scene = new THREE.Scene();
 const light = new THREE.DirectionalLight();
@@ -49,7 +50,7 @@ var circle = new Konva.Circle({
   fill: 'red',
   stroke: 'black',
   strokeWidth: 4
-});
+});  
 circle.draggable(true)
 const tr = new Konva.Transformer({node: circle});
 imglayer.add(tr)
@@ -91,9 +92,8 @@ function loadGLB(url) {
 setInterval(()=>{
   stage.toCanvas().toBlob(blob =>{
     mesh.material.map.image.src = URL.createObjectURL(blob);
-  })
   });
-}, 1000)
+}, 100)
   })
 }
 loadGLB("https://cdn.glitch.com/31df4c32-0e35-4740-8569-69390991ffeb%2FAvatarBot_Base.glb");
