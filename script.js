@@ -18,8 +18,17 @@ renderer.setAnimationLoop(animate)
 function animate(){
   renderer.render(scene, camera);
 }
-
-var stage = new Konva.Stage({
+window.stage.addEventListener('dragover', e => e.preventDefault())
+window.stage.addEventListener('drop', e => {
+  e.preventDefault()
+  const data = e.dataTransfer.getData("text/png");
+  console.log(data);
+  const layer = new Konva.Layer();
+  const image = new Konva.Image({image: data});
+  layer.add(image)
+  stage.add(layer)
+})
+const stage = new Konva.Stage({
   container: 'stage',   // id of container <div>
   width: 512,
   height: 512
@@ -36,7 +45,7 @@ var circle = new Konva.Circle({
   stroke: 'black',
   strokeWidth: 4
 });
-//circle.draggable(true)
+circle.draggable(true)
 const tr = new Konva.Transformer({node: circle});
 imglayer.add(tr)
 imglayer.add(circle);
@@ -60,7 +69,9 @@ function loadGLB(url) {
     const index = geo.index.array;
     const width = 500;
     const height = 500;
-    for (let i = 0; i < index.length; i+=3){
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'lightgrey'
+    for (let i = 0; i < index.length; i+=3){ 
       ctx.moveTo(uvs[index[i] * 2] * width, uvs[index[i] * 2 + 1] * height);
       ctx.lineTo(uvs[index[i + 1] * 2] * width, uvs[index[i + 1] * 2 + 1] * height);
       ctx.lineTo(uvs[index[i + 2] * 2] * width, uvs[index[i + 2] * 2 + 1] * height);
