@@ -1,4 +1,4 @@
-/* global THREE */
+/* global THREE, Konva */
 const renderer = new THREE.WebGLRenderer();
 document.body.append(renderer.domElement);
 const scene = new THREE.Scene();
@@ -10,7 +10,7 @@ const camera = new THREE.PerspectiveCamera();
 camera.position.z = 3;
 camera.aspect = renderer.domElement.width / renderer.domElement.height;
 camera.updateProjectionMatrix();
-const controls = new THREE.OrbitControls(camera);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enablePan = false;
 controls.target.set(0, 0.25, 0)
 controls.update();
@@ -18,7 +18,36 @@ renderer.setAnimationLoop(animate)
 function animate(){
   renderer.render(scene, camera);
 }
-const ctx = window.uv.getContext("2d");
+
+var stage = new Konva.Stage({
+  container: 'stage',   // id of container <div>
+  width: 500,
+  height: 500
+});
+
+var imglayer = new Konva.Layer();
+
+// create our shape
+var circle = new Konva.Circle({
+  x: stage.width() / 2,
+  y: stage.height() / 2,
+  radius: 70,
+  fill: 'red',
+  stroke: 'black',
+  strokeWidth: 4
+});
+circle.draggable(true)
+imglayer.add(circle);
+stage.add(imglayer)
+
+var layer = new Konva.Layer();
+
+stage.add(layer);
+
+
+
+const ctx = layer.getCanvas().getContext();
+
 function loadGLB(url) {
   
   new THREE.GLTFLoader().load(url, gltf => {
@@ -26,11 +55,13 @@ function loadGLB(url) {
     const geo = gltf.scene.getObjectByProperty("type", "SkinnedMesh").geometry;
     const uvs = geo.attributes.uv.array;
     const index = geo.index.array;
+    const width = 500;
+    const height = 500;
     for (let i = 0; i < index.length; i+=3){
-      ctx.moveTo(uvs[index[i] * 2] * window.uv.width, uvs[index[i] * 2 + 1] * window.uv.height);
-      ctx.lineTo(uvs[index[i + 1] * 2] * window.uv.width, uvs[index[i + 1] * 2 + 1] * window.uv.height);
-      ctx.lineTo(uvs[index[i + 2] * 2] * window.uv.width, uvs[index[i + 2] * 2 + 1] * window.uv.height);
-      ctx.lineTo(uvs[index[i] * 2] * window.uv.width, uvs[index[i] * 2 + 1] * window.uv.height);
+      ctx.moveTo(uvs[index[i] * 2] * width, uvs[index[i] * 2 + 1] * height);
+      ctx.lineTo(uvs[index[i + 1] * 2] * width, uvs[index[i + 1] * 2 + 1] * height);
+      ctx.lineTo(uvs[index[i + 2] * 2] * width, uvs[index[i + 2] * 2 + 1] * height);
+      ctx.lineTo(uvs[index[i] * 2] * width, uvs[index[i] * 2 + 1] * height);
     }
     ctx.stroke();
   })
