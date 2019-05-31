@@ -36,7 +36,9 @@ var circle = new Konva.Circle({
   stroke: 'black',
   strokeWidth: 4
 });
-circle.draggable(true)
+//circle.draggable(true)
+const tr = new Konva.Transformer({node: circle});
+imglayer.add(tr)
 imglayer.add(circle);
 stage.add(imglayer)
 
@@ -66,8 +68,8 @@ function loadGLB(url) {
     }
     ctx.stroke();
     
+    let loading = false;
     mesh.material.map.image.onload = () => {
-      console.log(mesh.material.map.image.readyState);
       mesh.material.map.needsUpdate = true;
     }
 setInterval(()=>{
