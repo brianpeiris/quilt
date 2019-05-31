@@ -21,8 +21,8 @@ function animate(){
 
 var stage = new Konva.Stage({
   container: 'stage',   // id of container <div>
-  width: 500,
-  height: 500
+  width: 512,
+  height: 512
 });
 
 var imglayer = new Konva.Layer();
@@ -52,7 +52,8 @@ function loadGLB(url) {
   
   new THREE.GLTFLoader().load(url, gltf => {
     scene.add(gltf.scene);
-    const geo = gltf.scene.getObjectByProperty("type", "SkinnedMesh").geometry;
+    const mesh = gltf.scene.getObjectByProperty("type", "SkinnedMesh");
+    const geo = mesh.geometry;
     const uvs = geo.attributes.uv.array;
     const index = geo.index.array;
     const width = 500;
@@ -64,6 +65,16 @@ function loadGLB(url) {
       ctx.lineTo(uvs[index[i] * 2] * width, uvs[index[i] * 2 + 1] * height);
     }
     ctx.stroke();
+    
+    mesh.material.map.image.onload = () => {
+      console.log(mesh.material.map.image.readyState);
+      mesh.material.map.needsUpdate = true;
+    }
+setInterval(()=>{
+  imglayer.canvas._canvas.toBlob(blob =>{
+    mesh.material.map.image.src = URL.createObjectURL(blob);
+  })
+}, 100)
   })
 }
 loadGLB("https://cdn.glitch.com/31df4c32-0e35-4740-8569-69390991ffeb%2FAvatarBot_Base.glb");
