@@ -5,6 +5,7 @@ const scene = new THREE.Scene();
 const light = new THREE.DirectionalLight();
 light.position.set(0, 1, 1);
 scene.add(light);
+scene.add(new THREE.AmbientLight(0x))
 const camera = new THREE.PerspectiveCamera();
 camera.position.z = 3;
 camera.aspect = renderer.domElement.width / renderer.domElement.height;
