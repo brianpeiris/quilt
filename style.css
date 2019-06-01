@@ -4,6 +4,7 @@ body {
   font-family: "Benton Sans", "Helvetica Neue", helvetica, arial, sans-serif;
   margin: 2em;
   display: flex;
+  align-items: center;
 }
 
 #stage, #avatar, #controls {
@@ -15,6 +16,10 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+@media(max-width: 1400px) {
+  body {flex-direction: column;}
 }
 
 #controls > * {
