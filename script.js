@@ -15,7 +15,7 @@ const scene = new THREE.Scene();
   scene.add(new THREE.AmbientLight(0x888888));
 
   const camera = new THREE.PerspectiveCamera();
-  camera.position.set(0, 0.5, 1)
+  camera.position.set(0, 0.5, 1);
   camera.aspect = renderer.domElement.width / renderer.domElement.height;
   camera.updateProjectionMatrix();
 
@@ -30,14 +30,17 @@ const scene = new THREE.Scene();
 const WIDTH = 512;
 const HEIGHT = 512;
 const stage = new Konva.Stage({ container: "stage", width: WIDTH, height: HEIGHT });
+let loading = false;
 let mapImage;
-function updateMap() {
-  if (!mapImage) return;
+const updateMap = () => {
+  if (!mapImage || loading) return;
   transformer.hide();
+  loading = true;
   stage.toCanvas().toBlob(blob => {
+    URL.revokeObjectURL(mapImage.src);
     mapImage.src = URL.createObjectURL(blob);
   });
-}
+};
 stage.on("dragmove", updateMap);
 
 const transformer = new Konva.Transformer();
@@ -64,19 +67,21 @@ stageEl.addEventListener("dragover", e => e.preventDefault());
 stageEl.addEventListener("drop", e => {
   e.preventDefault();
   const imageEl = document.createElement("img");
+  const file = e.dataTransfer.files[0];
+  const name = file.name;
   imageEl.onload = () => {
     const layer = new Konva.Layer();
     const image = new Konva.Image({ image: imageEl });
     image.draggable(true);
     layer.add(image);
-    layer.name(e.dataTransfer.files[0].name);
+    layer.name(name);
     image.on("mousedown", () => switchTransformer(image));
     stage.add(layer);
     switchTransformer(image);
     uvLayer.moveToTop();
     updateLayers();
   };
-  imageEl.src = URL.createObjectURL(e.dataTransfer.files[0]);
+  imageEl.src = URL.createObjectURL(file);
 });
 window.moveUp.onclick = () => {
   window.layers.selectedOptions[0]._node.moveUp();
@@ -162,6 +167,7 @@ function loadGLB(url) {
       mesh.material.map.needsUpdate = true;
       transformer.show();
       transformer.getLayer().draw();
+      loading = false;
     };
 
     setInterval(() => {}, 100);
