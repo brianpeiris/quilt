@@ -139,9 +139,12 @@ const ctx = uvLayer.getCanvas().getContext();
 ctx.lineWidth = 1;
 ctx.strokeStyle = "lightgrey";
 
+let avatar;
 function loadGLB(url) {
   new THREE.GLTFLoader().load(url, gltf => {
-    scene.add(gltf.scene);
+    if (avatar) scene.remove(avatar);
+    avatar = gltf.scene;
+    scene.add(avatar);
 
     const mesh = gltf.scene.getObjectByProperty("type", "SkinnedMesh");
     const geo = mesh.geometry;
@@ -176,4 +179,5 @@ function loadGLB(url) {
 
 loadGLB("https://cdn.glitch.com/31df4c32-0e35-4740-8569-69390991ffeb%2FAvatarBot_Base.glb");
 
-document.getElementById("glbfile").onchange = () => loadGLB(URL.createObjectURL(this.files[0]));
+const glbfile = document.getElementById("glbfile");
+glbfile.onchange = () => loadGLB(URL.createObjectURL(glbfile.files[0]));
