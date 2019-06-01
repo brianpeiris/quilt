@@ -39,6 +39,7 @@ const updateMap = () => {
   stage.toCanvas().toBlob(blob => {
     URL.revokeObjectURL(mapImage.src);
     mapImage.src = URL.createObjectURL(blob);
+    window.export.href = mapImage.src;
   });
 };
 stage.on("dragmove", updateMap);
@@ -100,13 +101,6 @@ window.toggleVisibility.onclick = () => {
 window.delete.onclick = () => {
   window.layers.selectedOptions[0]._node.remove();
   updateLayers();
-};
-window.export.onclick = () => {
-  transformer.hide();
-  stage.toCanvas().toBlob(blob => {
-    transformer.show();
-    window.open(URL.createObjectURL(blob));
-  });
 };
 function updateLayers(mapUpdate = true) {
   let numChildren = 0;

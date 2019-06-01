@@ -14,10 +14,12 @@ body {
 #controls {
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 #controls > * {
   margin: 1em;
+  text-align: center;
 }
 
 #layers { width: 13em; }
