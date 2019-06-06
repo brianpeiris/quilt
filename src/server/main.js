@@ -1,11 +1,10 @@
-const { createHTTPSConfig } = require("./utils.js");
 const https = require("https");
 const express = require("express");
 const fetch = require("node-fetch");
 const ogs = require("open-graph-scraper");
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.get("/proxy/:url", async (req, res) => {
   const { url } = req.params;
@@ -30,4 +29,4 @@ app.get("/proxy/:url", async (req, res) => {
 
 app.use(express.static("./src/client/"));
 
-https.createServer(createHTTPSConfig(), app).listen(port, () => console.log(`Listening on port ${port}!`));
+app.listen(port, () => console.log(`Listening on port ${port}!`));

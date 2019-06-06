@@ -6,8 +6,7 @@
   },
   "devDependencies": {
     "nodemon": "^1.19.1",
-    "prettier": "^1.17.1",
-    "selfsigned": "^1.10.4"
+    "prettier": "^1.17.1"
   },
   "dependencies": {
     "express": "^4.17.1",
