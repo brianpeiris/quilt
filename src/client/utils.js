@@ -1,0 +1,22 @@
+export async function imageFromDataTransfer (dataTransfer) {
+  if (dataTransfer.files[0]) {
+    const [file] = dataTransfer.files;
+    return { name: file.name, url: URL.createObjectURL(file) };
+  }
+  console.log("BPDEBUG types", dataTransfer, dataTransfer.types);
+  if (dataTransfer.getData("text/html")) {
+    const html = dataTransfer.getData("text/html");
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    const url = div.querySelector("img").src;
+    if (url.startsWith("data:")) return { name: "image", url };
+  }
+  if (dataTransfer.types.includes("text/uri-list")) {
+    const data = dataTransfer.getData("text/uri-list")
+    console.log("BPDEBUG data", data);
+    return { name: "image", url: `/proxy/${encodeURIComponent(data)}` };
+  }
+  dataTransfer.types.forEach(type => {
+    console.log("BPDEBUG dt", type, dataTransfer.getData(type));
+  });
+}

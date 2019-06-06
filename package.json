@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "scripts": {
+    "start": "node src/server/main.js",
+    "dev": "nodemon src/server/main.js"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.1",
+    "prettier": "^1.17.1",
+    "selfsigned": "^1.10.4"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "node-fetch": "^2.6.0",
+    "open-graph-scraper": "^3.6.1"
+  }
+}

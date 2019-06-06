@@ -1,5 +1,7 @@
 /* global THREE, Konva */
 
+import { imageFromDataTransfer } from "./utils.js";
+
 const scene = new THREE.Scene();
 
 (() => {
@@ -12,7 +14,7 @@ const scene = new THREE.Scene();
   const light = new THREE.DirectionalLight();
   light.position.set(0, 1, 1);
   scene.add(light);
-  scene.add(new THREE.AmbientLight(0x888888));
+  scene.add(new THREE.AmbientLight(0xbbbbbb));
 
   const camera = new THREE.PerspectiveCamera();
   camera.position.set(0, 0.5, 1);
@@ -36,7 +38,8 @@ const updateMap = () => {
   if (!mapImage || loading) return;
   transformer.hide();
   loading = true;
-  stage.toCanvas().toBlob(blob => {
+  const canvas = stage.toCanvas();
+  canvas.toBlob(blob => {
     URL.revokeObjectURL(mapImage.src);
     mapImage.src = URL.createObjectURL(blob);
     window.export.href = mapImage.src;
@@ -64,12 +67,12 @@ function switchTransformer(node) {
 }
 
 const stageEl = document.getElementById("stage");
-stageEl.addEventListener("dragover", e => e.preventDefault());
-stageEl.addEventListener("drop", e => {
+window.addEventListener("dragover", e => e.preventDefault());
+window.addEventListener("drop", async e => {
   e.preventDefault();
   const imageEl = document.createElement("img");
-  const file = e.dataTransfer.files[0];
-  const name = file.name;
+  const image = await imageFromDataTransfer(e.dataTransfer);
+  const { name, url } = image;
   imageEl.onload = () => {
     const layer = new Konva.Layer();
     const image = new Konva.Image({ image: imageEl });
@@ -82,7 +85,14 @@ stageEl.addEventListener("drop", e => {
     uvLayer.moveToTop();
     updateLayers();
   };
-  imageEl.src = URL.createObjectURL(file);
+  imageEl.src = url;
+});
+window.addEventListener("keyup", e => {
+  const selectedOption = window.layers.selectedOptions[0];
+  const selectedNode = selectedOption && selectedOption._node;
+  if (e.key === "Delete" && selectedNode) {
+    selectedNode.remove();
+  }
 });
 window.moveUp.onclick = () => {
   window.layers.selectedOptions[0]._node.moveUp();
