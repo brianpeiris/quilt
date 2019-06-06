@@ -8,12 +8,15 @@ export async function imageFromDataTransfer (dataTransfer) {
     const html = dataTransfer.getData("text/html");
     const div = document.createElement("div");
     div.innerHTML = html;
-    const url = div.querySelector("img").src;
-    if (url.startsWith("data:")) return { name: "image", url };
+    const img = div.querySelector("img")
+    const url = img && img.src;
+    
+    if (url && url.startsWith("data:")){
+      return { name: "image", url };
+    }
   }
   if (dataTransfer.types.includes("text/uri-list")) {
     const data = dataTransfer.getData("text/uri-list")
-    console.log("BPDEBUG data", data);
     return { name: "image", url: `/proxy/${encodeURIComponent(data)}` };
   }
   dataTransfer.types.forEach(type => {

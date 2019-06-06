@@ -12,10 +12,11 @@ app.get("/proxy/:url", async (req, res) => {
   const type = await fetch(url, { method: "HEAD" }).then(r => r.headers.get("content-type"));
   if (type.startsWith("text/html")) {
     try {
-      const og = await ogs({ url });
+      const og = await ogs({ url, onlyGetOpenGraphInfo: true, headers: { "user-agent": "Firefox/99" } });
       const { ogImage } = og.data;
-      if (ogImage.url) {
-        fetch(ogImage.url).then(r => r.body.pipe(res));
+      const ogImageUrl = ogImage && (ogImage.length ? ogImage[ogImage.length - 1].url : ogImage.url);
+      if (ogImageUrl) {
+        fetch(ogImageUrl).then(r => r.body.pipe(res));
       } else {
         res.status(404).end();
       }
