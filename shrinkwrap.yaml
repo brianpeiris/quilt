@@ -5,7 +5,6 @@ dependencies:
 devDependencies:
   nodemon: 1.19.1
   prettier: 1.17.1
-  selfsigned: 1.10.4
 packages:
   /@types/node/12.0.5:
     dev: false
@@ -1401,10 +1400,6 @@ packages:
       node: 4.x || >=6.0.0
     resolution:
       integrity: sha512-8dG4H5ujfvFiqDmVu9fQ5bOHUC15JMjMY/Zumv26oOvvVJjM67KF8koCWIabKQ1GJIa9r2mMZscBq/TbdOcmNA==
-  /node-forge/0.7.5:
-    dev: true
-    resolution:
-      integrity: sha512-MmbQJ2MTESTjt3Gi/3yG1wGpIMhUfcIypUCGtTizFR9IiccFwxSpfp0vtIZlkFclEqERemxfnSdZEMR9VqqEFQ==
   /nodemon/1.19.1:
     dependencies:
       chokidar: 2.1.6
@@ -1793,12 +1788,6 @@ packages:
     dev: false
     resolution:
       integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
-  /selfsigned/1.10.4:
-    dependencies:
-      node-forge: 0.7.5
-    dev: true
-    resolution:
-      integrity: sha512-9AukTiDmHXGXWtWjembZ5NDmVvP2695EtpgbCsxCa68w3c88B+alqbmZ4O3hZ4VWGXeGWzEVdvqgAJD8DQPCDw==
   /semver-diff/2.1.0:
     dependencies:
       semver: 5.7.0
@@ -2277,4 +2266,3 @@ specifiers:
   nodemon: ^1.19.1
   open-graph-scraper: ^3.6.1
   prettier: ^1.17.1
-  selfsigned: ^1.10.4
