@@ -31,18 +31,24 @@ const scene = new THREE.Scene();
 
 const WIDTH = 512;
 const HEIGHT = 512;
-const stage = new Konva.Stage({ container: "stage", width: WIDTH, height: HEIGHT });
+const stage = window.stage = new Konva.Stage({ container: "stage", width: WIDTH, height: HEIGHT });
+stage.draggable(true);
 let loading = false;
 let mapImage;
 const updateMap = () => {
   if (!mapImage || loading) return;
+  const origDraw = stage.draw;
+  stage.draw = () => {};
   transformer.hide();
+  uvLayer.hide();
   loading = true;
   const canvas = stage.toCanvas();
   canvas.toBlob(blob => {
     URL.revokeObjectURL(mapImage.src);
     mapImage.src = URL.createObjectURL(blob);
     window.export.href = mapImage.src;
+    uvLayer.show();
+    stage.draw = origDraw;
   });
 };
 stage.on("dragmove", updateMap);
@@ -94,6 +100,15 @@ window.addEventListener("keyup", e => {
     selectedNode.remove();
   }
 });
+window.addEventListener("wheel", e => {
+  const delta = 0.1 * -Math.sign(e.deltaY);
+  const scale = stage.scale();
+  stage.scaleX(scale.x + delta);
+  stage.scaleY(scale.y + delta);
+  const transformNode = transformer.getNode();
+  if (transformNode) switchTransformer(transformNode);
+  stage.draw();
+});
 window.moveUp.onclick = () => {
   window.layers.selectedOptions[0]._node.moveUp();
   uvLayer.moveToTop();
@@ -135,11 +150,16 @@ function updateLayers(mapUpdate = true) {
   if (mapUpdate) updateMap();
 }
 
-const uvLayer = new Konva.Layer();
+const uvLayer = new Konva.FastLayer();
 uvLayer.name("uvs");
 stage.add(uvLayer);
 updateLayers();
-const ctx = uvLayer.getCanvas().getContext();
+const uvCanvas = document.createElement("canvas");
+uvCanvas.width = WIDTH;
+uvCanvas.height = HEIGHT;
+const uvImage = new Konva.Image({ image: uvCanvas })
+uvLayer.add(uvImage);
+const ctx = uvCanvas.getContext("2d");
 ctx.lineWidth = 1;
 ctx.strokeStyle = "lightgrey";
 
@@ -168,6 +188,9 @@ function loadGLB(url) {
       ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
     }
     ctx.stroke();
+
+    uvImage.image(uvCanvas);
+    uvImage.draw();
 
     mapImage = mesh.material.map.image;
     mapImage.onload = () => {
