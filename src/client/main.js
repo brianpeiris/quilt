@@ -20,7 +20,8 @@ export default class App {
     this.layers = [
       new Layer("dog", "https://i.imgur.com/m7Vgs.png?dog"),
       new Layer("cthulu", "https://i.imgur.com/5Du8g5e.png?cthulu"),
-      new Layer("digbee", "https://i.imgur.com/GaheCcb.jpg?digbee")
+      new Layer("digbee", "https://i.imgur.com/GaheCcb.jpg?digbee"),
+      new Layer("thimble", "https://i.imgur.com/bIfA0Wg.jpg")
     ];
   }
   moveDown(index) {
@@ -41,6 +42,9 @@ export default class App {
   }
   toggleVisibility(index) {
     this.layers[index].visible = !this.layers[index].visible;
+  }
+  delete(index) {
+    this.layers.splice(index, 1);
   }
 }
 
@@ -83,8 +87,12 @@ class AppUI extends React.Component {
   };
   layerSelected = selectedIndex => {
     const transformer = this.transformerRef.current;
-    const node = (window.node = this.imageRefs[selectedIndex].current);
-    transformer.attachTo(node);
+    if (this.props.app.layers.length) {
+      const node = (window.node = this.imageRefs[selectedIndex].current);
+      transformer.attachTo(node);
+    } else {
+      transformer.detach();
+    }
 
     setTimeout(() => {
       // Layer selected is called on mouse down, but we don't want to interrupt a drag, so we postpone the state update.
@@ -210,6 +218,15 @@ class AppUI extends React.Component {
           }}
         >
           hide
+        </button>
+        <button
+          onClick={() => {
+            const index = this.state.selectedIndex;
+            this.props.app.delete(index);
+            this.layerSelected(Math.min(index, this.props.app.layers.length - 1));
+          }}
+        >
+          delete
         </button>
         <select
           id="layers"
