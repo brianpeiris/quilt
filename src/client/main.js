@@ -42,7 +42,6 @@ class ImageNode_ extends React.Component {
     this.updateImage();
   }
   componentDidUpdate() {
-    console.log("BPDEBUG componentDidUpdate", this.props.src);
     this.updateImage();
   }
   updateImage() {
@@ -61,7 +60,7 @@ class AppUI extends React.Component {
   constructor(props) {
     super(props);
     this.imageRefs = [];
-    this.transformerRefs = [];
+    this.transformerRef = React.createRef();
     this.state = {};
   }
   getImageRef = i => {
@@ -70,19 +69,8 @@ class AppUI extends React.Component {
     }
     return this.imageRefs[i];
   };
-  getTransformerRef = i => {
-    if (!this.transformerRefs[i]) {
-      this.transformerRefs[i] = React.createRef();
-    }
-    return this.transformerRefs[i];
-  };
   layerSelected = selectedIndex => {
-    for (const transformerRef of this.transformerRefs) {
-      const transformer = transformerRef.current;
-      transformer.hide();
-      transformer.getLayer().batchDraw();
-    }
-    const transformer = this.transformerRefs[selectedIndex].current;
+    const transformer = this.transformerRef.current;
     const node = (window.node = this.imageRefs[selectedIndex].current);
     transformer.attachTo(node);
     transformer.show();
@@ -101,6 +89,7 @@ class AppUI extends React.Component {
       layer.scaleY = scaleY;
       layer.rotation = e.currentTarget.rotation();
       this.forceUpdate();
+      this.transformerRef.current.getLayer().batchDraw();
     };
   };
   zoomStage = e => {
@@ -140,8 +129,6 @@ class AppUI extends React.Component {
                   scaleX={layer.scaleX}
                   scaleY={layer.scaleY}
                 />
-                <Konva.Rect width={50} height={50} fill="white" />
-                <Konva.Text text={layer.name} />
               </Konva.Layer>
             );
           })}
@@ -160,13 +147,24 @@ class AppUI extends React.Component {
                   onDragMove={this.layerUpdated(layer)}
                   onTransform={this.layerUpdated(layer)}
                 />
-                <Konva.Transformer ref={this.getTransformerRef(i)} />
               </Konva.Layer>
             );
           })}
+          <Konva.Layer>
+            <Konva.Transformer
+              ref={this.transformerRef}
+              onTransform={() => {
+                this.transformerRef.current
+                  .getNode()
+                  .getLayer()
+                  .batchDraw();
+              }}
+            />
+          </Konva.Layer>
         </Konva.Stage>
         <button
           onClick={() => {
+            this.transformerRef.current.detach();
             if (this.props.app.moveDown(this.state.selectedIndex)) {
               this.layerSelected(this.state.selectedIndex);
             }
