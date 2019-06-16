@@ -7,6 +7,10 @@ body {
   align-items: center;
 }
 
+.stage {
+  border: 1px solid black;
+}
+
 #stage, #avatar, #controls {
   margin: 1em;
 }

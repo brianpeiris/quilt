@@ -1,7 +1,202 @@
-/* global THREE, Konva */
+import React from "react";
+import ReactDOM from "react-dom";
+import Konva from "react-konva";
 
+class Layer {
+  constructor(name, src) {
+    this.name = name;
+    this.src = src;
+    this.x = 0;
+    this.y = 0;
+    this.rotation = 0;
+    this.scaleX = 0;
+    this.scaleY = 0;
+  }
+}
+
+export default class App {
+  constructor() {
+    this.layers = [
+      new Layer("dog", "https://i.imgur.com/m7Vgs.png?dog"),
+      new Layer("cthulu", "https://i.imgur.com/5Du8g5e.png?cthulu"),
+      new Layer("digbee", "https://i.imgur.com/GaheCcb.jpg?digbee")
+    ];
+  }
+  moveDown(index) {
+    const shouldMove = index !== 0;
+    if (!shouldMove) return;
+    const temp = this.layers[index - 1];
+    this.layers[index - 1] = this.layers[index];
+    this.layers[index] = temp;
+    return true;
+  }
+}
+
+class ImageNode_ extends React.Component {
+  constructor(props) {
+    super(props);
+    this.image = new Image();
+    this.state = { image: null };
+  }
+  componentDidMount() {
+    this.updateImage();
+  }
+  componentDidUpdate() {
+    console.log("BPDEBUG componentDidUpdate", this.props.src);
+    this.updateImage();
+  }
+  updateImage() {
+    if (this.props.src === this.image.src) return;
+    this.image.onload = () => this.setState({ image: this.image });
+    this.image.src = this.props.src;
+  }
+  render() {
+    return <Konva.Image ref={this.props.forwardedRef} image={this.state.image} {...this.props}></Konva.Image>;
+  }
+}
+const ImageNode = React.forwardRef((props, ref) => <ImageNode_ {...props} forwardedRef={ref} />);
+ImageNode.displayName = "ImageNode";
+
+class AppUI extends React.Component {
+  constructor(props) {
+    super(props);
+    this.imageRefs = [];
+    this.transformerRefs = [];
+    this.state = {};
+  }
+  getImageRef = i => {
+    if (!this.imageRefs[i]) {
+      this.imageRefs[i] = React.createRef();
+    }
+    return this.imageRefs[i];
+  };
+  getTransformerRef = i => {
+    if (!this.transformerRefs[i]) {
+      this.transformerRefs[i] = React.createRef();
+    }
+    return this.transformerRefs[i];
+  };
+  layerSelected = selectedIndex => {
+    for (const transformerRef of this.transformerRefs) {
+      const transformer = transformerRef.current;
+      transformer.hide();
+      transformer.getLayer().batchDraw();
+    }
+    const transformer = this.transformerRefs[selectedIndex].current;
+    const node = (window.node = this.imageRefs[selectedIndex].current);
+    transformer.attachTo(node);
+    transformer.show();
+    transformer.getLayer().batchDraw();
+
+    // Layer selected is called on mouse down, but we don't want to interrupt a drag, so we postpone the state update.
+    setTimeout(() => this.setState({ selectedIndex }));
+  };
+  layerUpdated = layer => {
+    return e => {
+      const { x, y } = e.currentTarget.position();
+      layer.x = x;
+      layer.y = y;
+      const { x: scaleX, y: scaleY } = e.currentTarget.scale();
+      layer.scaleX = scaleX;
+      layer.scaleY = scaleY;
+      layer.rotation = e.currentTarget.rotation();
+      this.forceUpdate();
+    };
+  };
+  zoomStage = e => {
+    e.evt.preventDefault();
+    const stage = e.currentTarget;
+    const oldScale = stage.scaleX();
+
+    const mousePointTo = {
+      x: stage.getPointerPosition().x / oldScale - stage.x() / oldScale,
+      y: stage.getPointerPosition().y / oldScale - stage.y() / oldScale
+    };
+
+    const newScale = e.evt.deltaY < 0 ? oldScale * 1.1 : oldScale / 1.1;
+    stage.scale({ x: newScale, y: newScale });
+
+    const newPos = {
+      x: -(mousePointTo.x - stage.getPointerPosition().x / newScale) * newScale,
+      y: -(mousePointTo.y - stage.getPointerPosition().y / newScale) * newScale
+    };
+    stage.position(newPos);
+    stage.batchDraw();
+  };
+  render() {
+    const { layers } = this.props.app;
+    const layersReversed = Array.from(layers).reverse();
+    return (
+      <div>
+        <Konva.Stage className="stage" width={512} height={512}>
+          {layers.map((layer, i) => {
+            return (
+              <Konva.Layer key={i}>
+                <ImageNode
+                  src={layer.src}
+                  x={layer.x}
+                  y={layer.y}
+                  rotation={layer.rotation}
+                  scaleX={layer.scaleX}
+                  scaleY={layer.scaleY}
+                />
+                <Konva.Rect width={50} height={50} fill="white" />
+                <Konva.Text text={layer.name} />
+              </Konva.Layer>
+            );
+          })}
+        </Konva.Stage>
+        <Konva.Stage className="stage" width={512} height={512} draggable="true" onWheel={this.zoomStage}>
+          {layers.map((layer, i) => {
+            return (
+              <Konva.Layer key={i}>
+                <ImageNode
+                  src={layer.src}
+                  ref={this.getImageRef(i)}
+                  onMouseDown={() => this.layerSelected(i)}
+                  x={layer.x}
+                  y={layer.y}
+                  draggable="true"
+                  onDragMove={this.layerUpdated(layer)}
+                  onTransform={this.layerUpdated(layer)}
+                />
+                <Konva.Transformer ref={this.getTransformerRef(i)} />
+              </Konva.Layer>
+            );
+          })}
+        </Konva.Stage>
+        <button
+          onClick={() => {
+            if (this.props.app.moveDown(this.state.selectedIndex)) {
+              this.layerSelected(this.state.selectedIndex);
+            }
+          }}
+        >
+          down
+        </button>
+        <select
+          id="layers"
+          size="10"
+          onChange={({ target }) => this.layerSelected(layers.length - target.selectedIndex - 1)}
+          value={this.state.selectedIndex}
+        >
+          {layersReversed.map((layer, i) => (
+            <option key={i} value={layers.length - i - 1}>
+              {layer.name}
+            </option>
+          ))}
+        </select>
+        <div style={{ whiteSpace: "pre" }}>{JSON.stringify(this.props.app, null, 2)}</div>
+      </div>
+    );
+  }
+}
+
+window.app = new App();
+ReactDOM.render(<AppUI app={window.app} />, document.getElementById("root"));
+
+/*
 import { imageFromDataTransfer } from "./utils.js";
-
 const scene = new THREE.Scene();
 
 (() => {
@@ -208,3 +403,4 @@ loadGLB("https://cdn.glitch.com/31df4c32-0e35-4740-8569-69390991ffeb%2FAvatarBot
 
 const glbfile = document.getElementById("glbfile");
 glbfile.onchange = () => loadGLB(URL.createObjectURL(glbfile.files[0]));
+*/

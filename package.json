@@ -1,16 +1,32 @@
 {
   "private": true,
   "scripts": {
-    "start": "node src/server/main.js",
-    "dev": "nodemon src/server/main.js"
+    "dev": "webpack-dev-server src/client/main.js -o bundle.js --mode development -w --host 0.0.0.0 --content-base src/client",
+    "start": "node src/server/main.js"
   },
   "devDependencies": {
+    "@babel/core": "^7.4.5",
+    "@babel/plugin-proposal-class-properties": "^7.4.4",
+    "@babel/plugin-transform-react-jsx": "^7.3.0",
+    "babel-eslint": "^10.0.1",
+    "babel-loader": "^8.0.6",
+    "eslint": "^5.16.0",
+    "eslint-config-prettier": "^5.0.0",
+    "eslint-plugin-prettier": "^3.1.0",
+    "eslint-plugin-react": "^7.13.0",
     "nodemon": "^1.19.1",
-    "prettier": "^1.17.1"
+    "prettier": "^1.17.1",
+    "webpack": "^4.34.0",
+    "webpack-cli": "^3.3.4",
+    "webpack-dev-server": "^3.7.1"
   },
   "dependencies": {
     "express": "^4.17.1",
+    "konva": "^3.3.3",
     "node-fetch": "^2.6.0",
-    "open-graph-scraper": "^3.6.1"
+    "open-graph-scraper": "^3.6.1",
+    "react-konva": "^16.8.7-2",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6"
   }
 }
