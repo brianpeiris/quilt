@@ -30,6 +30,14 @@ export default class App {
     this.layers[index] = temp;
     return true;
   }
+  moveUp(index) {
+    const shouldMove = index !== this.layers.length - 1;
+    if (!shouldMove) return;
+    const temp = this.layers[index + 1];
+    this.layers[index + 1] = this.layers[index];
+    this.layers[index] = temp;
+    return true;
+  }
 }
 
 class ImageNode_ extends React.Component {
@@ -179,6 +187,15 @@ class AppUI extends React.Component {
           }}
         >
           down
+        </button>
+        <button
+          onClick={() => {
+            if (this.props.app.moveUp(this.state.selectedIndex)) {
+              this.layerSelected(this.state.selectedIndex + 1);
+            }
+          }}
+        >
+          up
         </button>
         <select
           id="layers"
