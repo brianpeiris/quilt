@@ -11,6 +11,7 @@ class Layer {
     this.rotation = 0;
     this.scaleX = 1;
     this.scaleY = 1;
+    this.visible = true;
   }
 }
 
@@ -37,6 +38,9 @@ export default class App {
     this.layers[index + 1] = this.layers[index];
     this.layers[index] = temp;
     return true;
+  }
+  toggleVisibility(index) {
+    this.layers[index].visible = !this.layers[index].visible;
   }
 }
 
@@ -140,6 +144,7 @@ class AppUI extends React.Component {
                   rotation={layer.rotation}
                   scaleX={layer.scaleX}
                   scaleY={layer.scaleY}
+                  visible={layer.visible}
                 />
               </Konva.Layer>
             );
@@ -158,6 +163,7 @@ class AppUI extends React.Component {
                   rotation={layer.rotation}
                   scaleX={layer.scaleX}
                   scaleY={layer.scaleY}
+                  visible={layer.visible}
                   draggable="true"
                   onDragMove={this.layerUpdated(layer)}
                   onTransform={this.layerUpdated(layer)}
@@ -197,6 +203,14 @@ class AppUI extends React.Component {
         >
           up
         </button>
+        <button
+          onClick={() => {
+            this.props.app.toggleVisibility(this.state.selectedIndex);
+            this.forceUpdate();
+          }}
+        >
+          hide
+        </button>
         <select
           id="layers"
           size="10"
@@ -205,7 +219,7 @@ class AppUI extends React.Component {
         >
           {layersReversed.map((layer, i) => (
             <option key={i} value={layers.length - i - 1}>
-              {layer.name}
+              {layer.name} {layer.visible ? "" : "(hidden)"}
             </option>
           ))}
         </select>
