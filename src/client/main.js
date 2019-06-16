@@ -85,7 +85,7 @@ class AppUI extends React.Component {
     }
     return this.imageRefs[i];
   };
-  layerSelected = selectedIndex => {
+  selectLayer = selectedIndex => {
     const transformer = this.transformerRef.current;
     if (this.props.app.layers.length) {
       const node = (window.node = this.imageRefs[selectedIndex].current);
@@ -165,7 +165,7 @@ class AppUI extends React.Component {
                 <ImageNode
                   src={layer.src}
                   ref={this.getImageRef(i)}
-                  onMouseDown={() => this.layerSelected(i)}
+                  onMouseDown={() => this.selectLayer(i)}
                   x={layer.x}
                   y={layer.y}
                   rotation={layer.rotation}
@@ -196,7 +196,7 @@ class AppUI extends React.Component {
         <button
           onClick={() => {
             if (this.props.app.moveDown(this.state.selectedIndex)) {
-              this.layerSelected(this.state.selectedIndex - 1);
+              this.selectLayer(this.state.selectedIndex - 1);
             }
           }}
         >
@@ -205,7 +205,7 @@ class AppUI extends React.Component {
         <button
           onClick={() => {
             if (this.props.app.moveUp(this.state.selectedIndex)) {
-              this.layerSelected(this.state.selectedIndex + 1);
+              this.selectLayer(this.state.selectedIndex + 1);
             }
           }}
         >
@@ -223,7 +223,7 @@ class AppUI extends React.Component {
           onClick={() => {
             const index = this.state.selectedIndex;
             this.props.app.delete(index);
-            this.layerSelected(Math.min(index, this.props.app.layers.length - 1));
+            this.selectLayer(Math.min(index, this.props.app.layers.length - 1));
           }}
         >
           delete
@@ -231,7 +231,7 @@ class AppUI extends React.Component {
         <select
           id="layers"
           size="10"
-          onChange={({ target }) => this.layerSelected(layers.length - target.selectedIndex - 1)}
+          onChange={({ target }) => this.selectLayer(layers.length - target.selectedIndex - 1)}
           value={this.state.selectedIndex}
         >
           {layersReversed.map((layer, i) => (
