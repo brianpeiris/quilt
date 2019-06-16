@@ -9,8 +9,8 @@ class Layer {
     this.x = 0;
     this.y = 0;
     this.rotation = 0;
-    this.scaleX = 0;
-    this.scaleY = 0;
+    this.scaleX = 1;
+    this.scaleY = 1;
   }
 }
 
@@ -73,11 +73,15 @@ class AppUI extends React.Component {
     const transformer = this.transformerRef.current;
     const node = (window.node = this.imageRefs[selectedIndex].current);
     transformer.attachTo(node);
-    transformer.show();
-    transformer.getLayer().batchDraw();
 
-    // Layer selected is called on mouse down, but we don't want to interrupt a drag, so we postpone the state update.
-    setTimeout(() => this.setState({ selectedIndex }));
+    setTimeout(() => {
+      // Layer selected is called on mouse down, but we don't want to interrupt a drag, so we postpone the state update.
+      this.setState({ selectedIndex });
+
+      // We also want to give the transformer a chance to attach to the new node before updating it.
+      transformer.forceUpdate();
+      transformer.getLayer().batchDraw();
+    });
   };
   layerUpdated = layer => {
     return e => {
@@ -143,6 +147,9 @@ class AppUI extends React.Component {
                   onMouseDown={() => this.layerSelected(i)}
                   x={layer.x}
                   y={layer.y}
+                  rotation={layer.rotation}
+                  scaleX={layer.scaleX}
+                  scaleY={layer.scaleY}
                   draggable="true"
                   onDragMove={this.layerUpdated(layer)}
                   onTransform={this.layerUpdated(layer)}
@@ -154,6 +161,8 @@ class AppUI extends React.Component {
             <Konva.Transformer
               ref={this.transformerRef}
               onTransform={() => {
+                // Since our transformer is an a different layer than the node it's attached to, we have to update
+                // it manually.
                 this.transformerRef.current
                   .getNode()
                   .getLayer()
@@ -164,9 +173,8 @@ class AppUI extends React.Component {
         </Konva.Stage>
         <button
           onClick={() => {
-            this.transformerRef.current.detach();
             if (this.props.app.moveDown(this.state.selectedIndex)) {
-              this.layerSelected(this.state.selectedIndex);
+              this.layerSelected(this.state.selectedIndex - 1);
             }
           }}
         >
