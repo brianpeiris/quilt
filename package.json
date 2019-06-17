@@ -25,8 +25,9 @@
     "konva": "^3.3.3",
     "node-fetch": "^2.6.0",
     "open-graph-scraper": "^3.6.1",
-    "react-konva": "^16.8.7-2",
     "react": "^16.8.6",
-    "react-dom": "^16.8.6"
+    "react-dom": "^16.8.6",
+    "react-konva": "^16.8.7-2",
+    "three": "^0.105.2"
   }
 }

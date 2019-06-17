@@ -1,6 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import * as K from "konva";
 import Konva from "react-konva";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+
+// Disable Konva warnings because of transformer false positive
+K.Util.warn = () => {};
 
 class Layer {
   constructor(name, src) {
@@ -18,10 +25,10 @@ class Layer {
 export default class App {
   constructor() {
     this.layers = [
-      new Layer("dog", "https://i.imgur.com/m7Vgs.png?dog"),
-      new Layer("cthulu", "https://i.imgur.com/5Du8g5e.png?cthulu"),
-      new Layer("digbee", "https://i.imgur.com/GaheCcb.jpg?digbee"),
-      new Layer("thimble", "https://i.imgur.com/bIfA0Wg.jpg")
+      new Layer("dog", location.href + "dog.png"),
+      new Layer("cthulu", location.href + "cthulu.png"),
+      new Layer("digbee", location.href + "digbee.png"),
+      new Layer("thimble", location.href + "thimble.png")
     ];
   }
   moveDown(index) {
@@ -45,6 +52,94 @@ export default class App {
   }
   delete(index) {
     this.layers.splice(index, 1);
+  }
+}
+
+class Preview extends React.Component {
+  constructor(props) {
+    super(props);
+    this.canvasRef = React.createRef();
+    this.scene = new THREE.Scene();
+  }
+  componentDidMount() {
+    this.initRenderer();
+  }
+  componentDidUpdate() {
+    if (this.props.map !== this.mapImage.src) {
+      this.loadingMap = true;
+      this.mapImage.src = this.props.map;
+    }
+  }
+  initRenderer() {
+    const renderer = new THREE.WebGLRenderer({ canvas: this.canvasRef.current });
+    renderer.setSize(512, 512);
+    renderer.setClearColor(0xaaaaaa);
+
+    const light = new THREE.DirectionalLight();
+    light.position.set(0, 1, 1);
+    this.scene.add(light);
+    this.scene.add(new THREE.AmbientLight(0xbbbbbb));
+
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 0.5, 1);
+    camera.aspect = renderer.domElement.width / renderer.domElement.height;
+    camera.updateProjectionMatrix();
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enablePan = false;
+    controls.target.set(0, 0.35, 0);
+    controls.update();
+
+    renderer.setAnimationLoop(() => renderer.render(this.scene, camera));
+    this.loadGLB("https://cdn.glitch.com/31df4c32-0e35-4740-8569-69390991ffeb%2FAvatarBot_Base.glb");
+  }
+  loadGLB(url) {
+    new GLTFLoader().load(url, gltf => {
+      if (this.avatar) this.scene.remove(this.avatar);
+      this.avatar = gltf.scene;
+      this.scene.add(this.avatar);
+      const mesh = gltf.scene.getObjectByProperty("type", "SkinnedMesh");
+      this.mapImage = mesh.material.map.image;
+      this.mapImage.onload = () => {
+        mesh.material.map.needsUpdate = true;
+        this.loadingMap = false;
+      };
+
+      /*
+        const mesh = gltf.scene.getObjectByProperty("type", "SkinnedMesh");
+        const geo = mesh.geometry;
+        const uvs = geo.attributes.uv.array;
+        const index = geo.index.array;
+        const w = 512;
+        const h = 512;
+
+        for (let i = 0; i < index.length; i += 3) {
+          let idx = index[i] * 2;
+          ctx.moveTo(uvs[idx] * w, uvs[idx + 1] * h);
+          idx = index[i + 1] * 2;
+          ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
+          idx = index[i + 2] * 2;
+          ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
+          idx = index[i] * 2;
+          ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
+        }
+        ctx.stroke();
+
+        uvImage.image(uvCanvas);
+        uvImage.draw();
+
+        mapImage = mesh.material.map.image;
+        mapImage.onload = () => {
+          mesh.material.map.needsUpdate = true;
+          transformer.show();
+          transformer.getLayer().draw();
+          loading = false;
+        };
+      */
+    });
+  }
+  render() {
+    return <canvas ref={this.canvasRef} />;
   }
 }
 
@@ -77,8 +172,12 @@ class AppUI extends React.Component {
     super(props);
     this.imageRefs = [];
     this.transformerRef = React.createRef();
-    this.state = {};
+    this.mapStage = React.createRef();
   }
+  state = {
+    selectedIndex: "",
+    mapSrc: null
+  };
   getImageRef = i => {
     if (!this.imageRefs[i]) {
       this.imageRefs[i] = React.createRef();
@@ -114,7 +213,17 @@ class AppUI extends React.Component {
       layer.rotation = e.currentTarget.rotation();
       this.forceUpdate();
       this.transformerRef.current.getLayer().batchDraw();
+      this.updateMap();
     };
+  };
+  updateMap = () => {
+    if (this.generating) return;
+    this.generating = true;
+    this.mapStage.current.toCanvas().toBlob(blob => {
+      URL.revokeObjectURL(this.state.mapSrc);
+      this.setState({ mapSrc: URL.createObjectURL(blob) });
+      this.generating = false;
+    });
   };
   zoomStage = e => {
     e.evt.preventDefault();
@@ -141,7 +250,8 @@ class AppUI extends React.Component {
     const layersReversed = Array.from(layers).reverse();
     return (
       <div>
-        <Konva.Stage className="stage" width={512} height={512}>
+        <Preview map={this.state.mapSrc} />
+        <Konva.Stage className="stage" width={512} height={512} ref={this.mapStage}>
           {layers.map((layer, i) => {
             return (
               <Konva.Layer key={i}>
