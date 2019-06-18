@@ -430,7 +430,9 @@ class AppUI extends React.Component {
           </a>
           <div className="logo">
             <h1>Quilt</h1>
-            <a href="">source code</a>
+            <a href="https://github.com/brianpeiris/quilt" target="_blank" rel="noopener noreferrer">
+              source code
+            </a>
           </div>
         </div>
         {/*<div style={{ whiteSpace: "pre" }}>{JSON.stringify(this.props.app, null, 2)}</div>*/}
