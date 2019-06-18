@@ -11,6 +11,10 @@ body {
   border: 1px solid black;
 }
 
+.hidden {
+  display: none;
+}
+
 #stage, #avatar, #controls {
   margin: 1em;
 }

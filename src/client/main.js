@@ -1,13 +1,15 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import * as K from "konva";
+import * as _Konva from "konva";
 import Konva from "react-konva";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
+import { imageFromDataTransfer } from "./utils.js";
+
 // Disable Konva warnings because of transformer false positive
-K.Util.warn = () => {};
+_Konva.Util.warn = () => {};
 
 class Layer {
   constructor(name, src) {
@@ -24,14 +26,13 @@ class Layer {
 
 export default class App {
   constructor() {
-    this.layers = [
-      new Layer("dog", location.href + "dog.png"),
-      new Layer("cthulu", location.href + "cthulu.png"),
-      new Layer("digbee", location.href + "digbee.png"),
-      new Layer("thimble", location.href + "thimble.png")
-    ];
+    this.layers = [];
+  }
+  get hasLayers() {
+    return !!this.layers.length;
   }
   moveDown(index) {
+    if (!this.hasLayers) return;
     const shouldMove = index !== 0;
     if (!shouldMove) return;
     const temp = this.layers[index - 1];
@@ -40,6 +41,7 @@ export default class App {
     return true;
   }
   moveUp(index) {
+    if (!this.hasLayers) return;
     const shouldMove = index !== this.layers.length - 1;
     if (!shouldMove) return;
     const temp = this.layers[index + 1];
@@ -48,10 +50,15 @@ export default class App {
     return true;
   }
   toggleVisibility(index) {
+    if (!this.hasLayers) return;
     this.layers[index].visible = !this.layers[index].visible;
   }
   delete(index) {
+    if (!this.hasLayers) return;
     this.layers.splice(index, 1);
+  }
+  add(name, url) {
+    this.layers.push(new Layer(name, url));
   }
 }
 
@@ -66,7 +73,6 @@ class Preview extends React.Component {
   }
   componentDidUpdate() {
     if (this.props.map !== this.mapImage.src) {
-      this.loadingMap = true;
       this.mapImage.src = this.props.map;
     }
   }
@@ -102,11 +108,9 @@ class Preview extends React.Component {
       this.mapImage = mesh.material.map.image;
       this.mapImage.onload = () => {
         mesh.material.map.needsUpdate = true;
-        this.loadingMap = false;
       };
 
       /*
-        const mesh = gltf.scene.getObjectByProperty("type", "SkinnedMesh");
         const geo = mesh.geometry;
         const uvs = geo.attributes.uv.array;
         const index = geo.index.array;
@@ -127,14 +131,6 @@ class Preview extends React.Component {
 
         uvImage.image(uvCanvas);
         uvImage.draw();
-
-        mapImage = mesh.material.map.image;
-        mapImage.onload = () => {
-          mesh.material.map.needsUpdate = true;
-          transformer.show();
-          transformer.getLayer().draw();
-          loading = false;
-        };
       */
     });
   }
@@ -178,6 +174,19 @@ class AppUI extends React.Component {
     selectedIndex: "",
     mapSrc: null
   };
+  componentDidMount() {
+    window.addEventListener("dragover", e => e.preventDefault());
+    window.addEventListener("drop", async e => {
+      e.preventDefault();
+      const image = await imageFromDataTransfer(e.dataTransfer);
+      const { name, url } = image;
+      this.props.app.add(name, url);
+      this.forceUpdate();
+      setTimeout(() => {
+        this.selectLayer(this.props.app.layers.length - 1);
+      }, 10);
+    });
+  }
   getImageRef = i => {
     if (!this.imageRefs[i]) {
       this.imageRefs[i] = React.createRef();
@@ -200,6 +209,8 @@ class AppUI extends React.Component {
       // We also want to give the transformer a chance to attach to the new node before updating it.
       transformer.forceUpdate();
       transformer.getLayer().batchDraw();
+
+      this.updateMap();
     });
   };
   layerUpdated = layer => {
@@ -243,6 +254,7 @@ class AppUI extends React.Component {
       y: -(mousePointTo.y - stage.getPointerPosition().y / newScale) * newScale
     };
     stage.position(newPos);
+    this.transformerRef.current.forceUpdate();
     stage.batchDraw();
   };
   render() {
@@ -251,7 +263,10 @@ class AppUI extends React.Component {
     return (
       <div>
         <Preview map={this.state.mapSrc} />
-        <Konva.Stage className="stage" width={512} height={512} ref={this.mapStage}>
+        <Konva.Stage className="stage hidden" width={512} height={512} ref={this.mapStage}>
+          <Konva.Layer>
+            <Konva.Rect fill="black" width={512} height={512} />
+          </Konva.Layer>
           {layers.map((layer, i) => {
             return (
               <Konva.Layer key={i}>
@@ -269,6 +284,9 @@ class AppUI extends React.Component {
           })}
         </Konva.Stage>
         <Konva.Stage className="stage" width={512} height={512} draggable="true" onWheel={this.zoomStage}>
+          <Konva.Layer>
+            <Konva.Rect fill="black" width={512} height={512} />
+          </Konva.Layer>
           {layers.map((layer, i) => {
             return (
               <Konva.Layer key={i}>
@@ -325,6 +343,7 @@ class AppUI extends React.Component {
           onClick={() => {
             this.props.app.toggleVisibility(this.state.selectedIndex);
             this.forceUpdate();
+            setTimeout(() => this.updateMap(), 10);
           }}
         >
           hide
@@ -350,7 +369,10 @@ class AppUI extends React.Component {
             </option>
           ))}
         </select>
-        <div style={{ whiteSpace: "pre" }}>{JSON.stringify(this.props.app, null, 2)}</div>
+        <a target="_blank" rel="noopener noreferrer" href={this.state.mapSrc}>
+          export
+        </a>
+        {/*<div style={{ whiteSpace: "pre" }}>{JSON.stringify(this.props.app, null, 2)}</div>*/}
       </div>
     );
   }
@@ -360,78 +382,6 @@ window.app = new App();
 ReactDOM.render(<AppUI app={window.app} />, document.getElementById("root"));
 
 /*
-import { imageFromDataTransfer } from "./utils.js";
-const scene = new THREE.Scene();
-
-(() => {
-  const renderer = new THREE.WebGLRenderer();
-  renderer.setSize(512, 512);
-  renderer.domElement.id = "avatar";
-  document.body.insertBefore(renderer.domElement, document.body.children[0]);
-  renderer.setClearColor(0xaaaaaa);
-
-  const light = new THREE.DirectionalLight();
-  light.position.set(0, 1, 1);
-  scene.add(light);
-  scene.add(new THREE.AmbientLight(0xbbbbbb));
-
-  const camera = new THREE.PerspectiveCamera();
-  camera.position.set(0, 0.5, 1);
-  camera.aspect = renderer.domElement.width / renderer.domElement.height;
-  camera.updateProjectionMatrix();
-
-  const controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enablePan = false;
-  controls.target.set(0, 0.35, 0);
-  controls.update();
-
-  renderer.setAnimationLoop(() => renderer.render(scene, camera));
-})();
-
-const WIDTH = 512;
-const HEIGHT = 512;
-const stage = window.stage = new Konva.Stage({ container: "stage", width: WIDTH, height: HEIGHT });
-stage.draggable(true);
-let loading = false;
-let mapImage;
-const updateMap = () => {
-  if (!mapImage || loading) return;
-  const origDraw = stage.draw;
-  stage.draw = () => {};
-  transformer.hide();
-  uvLayer.hide();
-  loading = true;
-  const canvas = stage.toCanvas();
-  canvas.toBlob(blob => {
-    URL.revokeObjectURL(mapImage.src);
-    mapImage.src = URL.createObjectURL(blob);
-    window.export.href = mapImage.src;
-    uvLayer.show();
-    stage.draw = origDraw;
-  });
-};
-stage.on("dragmove", updateMap);
-
-const transformer = new Konva.Transformer();
-transformer.on("transform", updateMap);
-
-function switchTransformer(node) {
-  transformer.show();
-
-  const oldLayer = transformer.getLayer();
-  transformer.detach();
-  transformer.remove();
-  if (oldLayer) oldLayer.draw();
-
-  const layer = node.getLayer();
-  layer.add(transformer);
-  transformer.attachTo(node);
-  layer.draw();
-
-  updateLayers(false);
-}
-
-const stageEl = document.getElementById("stage");
 window.addEventListener("dragover", e => e.preventDefault());
 window.addEventListener("drop", async e => {
   e.preventDefault();
@@ -459,55 +409,6 @@ window.addEventListener("keyup", e => {
     selectedNode.remove();
   }
 });
-window.addEventListener("wheel", e => {
-  const delta = 0.1 * -Math.sign(e.deltaY);
-  const scale = stage.scale();
-  stage.scaleX(scale.x + delta);
-  stage.scaleY(scale.y + delta);
-  const transformNode = transformer.getNode();
-  if (transformNode) switchTransformer(transformNode);
-  stage.draw();
-});
-window.moveUp.onclick = () => {
-  window.layers.selectedOptions[0]._node.moveUp();
-  uvLayer.moveToTop();
-  updateLayers();
-};
-window.moveDown.onclick = () => {
-  window.layers.selectedOptions[0]._node.moveDown();
-  updateLayers();
-};
-window.toggleVisibility.onclick = () => {
-  const node = window.layers.selectedOptions[0]._node;
-  node.visible(!node.visible());
-  updateLayers();
-};
-window.delete.onclick = () => {
-  window.layers.selectedOptions[0]._node.remove();
-  updateLayers();
-};
-function updateLayers(mapUpdate = true) {
-  let numChildren = 0;
-  stage.getChildren().each((child, i) => {
-    if (!window.layers.children[i]) {
-      const layerEl = document.createElement("option");
-      window.layers.insertBefore(layerEl, window.layers.children[0]);
-    }
-    numChildren++;
-  });
-  while (window.layers.children[numChildren]) {
-    window.layers.removeChild(window.layers.children[numChildren]);
-  }
-  const selectedNode = transformer.getNode();
-  const selectedLayer = selectedNode && selectedNode.getLayer();
-  stage.getChildren().each((child, i) => {
-    const option = window.layers.children[window.layers.children.length - 1 - i];
-    option.textContent = child.name() + (child.visible() ? "" : "👻");
-    option._node = child;
-    if (selectedLayer === child) option.selected = true;
-  });
-  if (mapUpdate) updateMap();
-}
 
 const uvLayer = new Konva.FastLayer();
 uvLayer.name("uvs");
@@ -521,49 +422,6 @@ uvLayer.add(uvImage);
 const ctx = uvCanvas.getContext("2d");
 ctx.lineWidth = 1;
 ctx.strokeStyle = "lightgrey";
-
-let avatar;
-function loadGLB(url) {
-  new THREE.GLTFLoader().load(url, gltf => {
-    if (avatar) scene.remove(avatar);
-    avatar = gltf.scene;
-    scene.add(avatar);
-
-    const mesh = gltf.scene.getObjectByProperty("type", "SkinnedMesh");
-    const geo = mesh.geometry;
-    const uvs = geo.attributes.uv.array;
-    const index = geo.index.array;
-    const w = WIDTH;
-    const h = HEIGHT;
-
-    for (let i = 0; i < index.length; i += 3) {
-      let idx = index[i] * 2;
-      ctx.moveTo(uvs[idx] * w, uvs[idx + 1] * h);
-      idx = index[i + 1] * 2;
-      ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
-      idx = index[i + 2] * 2;
-      ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
-      idx = index[i] * 2;
-      ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
-    }
-    ctx.stroke();
-
-    uvImage.image(uvCanvas);
-    uvImage.draw();
-
-    mapImage = mesh.material.map.image;
-    mapImage.onload = () => {
-      mesh.material.map.needsUpdate = true;
-      transformer.show();
-      transformer.getLayer().draw();
-      loading = false;
-    };
-
-    setInterval(() => {}, 100);
-  });
-}
-
-loadGLB("https://cdn.glitch.com/31df4c32-0e35-4740-8569-69390991ffeb%2FAvatarBot_Base.glb");
 
 const glbfile = document.getElementById("glbfile");
 glbfile.onchange = () => loadGLB(URL.createObjectURL(glbfile.files[0]));

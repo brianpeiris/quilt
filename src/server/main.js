@@ -1,9 +1,14 @@
-const https = require("https");
 const express = require("express");
 const fetch = require("node-fetch");
 const ogs = require("open-graph-scraper");
+const webpack = require("webpack");
+const middleware = require("webpack-dev-middleware");
 
 const app = express();
+
+const compiler = webpack(require("../../webpack.config.js"));
+app.use(middleware(compiler));
+
 const port = process.env.PORT || 3000;
 
 app.get("/proxy/:url", async (req, res) => {

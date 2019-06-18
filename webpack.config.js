@@ -1,5 +1,8 @@
 module.exports = {
-  devtool: "eval-source-map",
+  devtool: "eval",
+  entry: {
+    main: "./src/client/main.js"
+  },
   module: {
     rules: [
       {
