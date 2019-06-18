@@ -1,2 +1,4 @@
 node_modules
 src/server/.certs
+src/client/bundle.js
+src/client/fonts/

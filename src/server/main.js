@@ -2,12 +2,14 @@ const express = require("express");
 const fetch = require("node-fetch");
 const ogs = require("open-graph-scraper");
 const webpack = require("webpack");
-const middleware = require("webpack-dev-middleware");
 
 const app = express();
 
-const compiler = webpack(require("../../webpack.config.js"));
-app.use(middleware(compiler));
+if (process.env.NODE_ENV === "development") {
+  const compiler = webpack({ ...require("../../webpack.config.js"), mode: "development" });
+  const middleware = require("webpack-dev-middleware");
+  app.use(middleware(compiler));
+}
 
 const port = process.env.PORT || 3000;
 

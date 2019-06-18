@@ -1,7 +1,13 @@
+const path = require("path");
+
 module.exports = {
-  devtool: "none",
+  devtool: "eval",
   entry: {
     main: "./src/client/main.js"
+  },
+  output: {
+    path: path.resolve(__dirname, "src/client"),
+    filename: "bundle.js"
   },
   module: {
     rules: [

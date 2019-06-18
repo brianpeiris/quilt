@@ -80,7 +80,7 @@ class Preview extends React.Component {
     this.initRenderer();
   }
   componentDidUpdate() {
-    if (this.props.map !== this.mapImage.src) {
+    if (this.props.map && this.props.map !== this.mapImage.src) {
       this.mapImage.src = this.props.map;
     }
   }
@@ -172,7 +172,7 @@ class ImageNode_ extends React.Component {
     this.updateImage();
   }
   updateImage() {
-    if (this.props.src === this.image.src) return;
+    if (!this.props.src || this.props.src === this.image.src) return;
     this.image.onload = () => this.setState({ image: this.image });
     this.image.src = this.props.src;
   }
