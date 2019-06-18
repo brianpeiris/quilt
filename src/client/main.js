@@ -182,9 +182,8 @@ class AppUI extends React.Component {
       const { name, url } = image;
       this.props.app.add(name, url);
       this.forceUpdate();
-      setTimeout(() => {
-        this.selectLayer(this.props.app.layers.length - 1);
-      }, 10);
+      // :( More setTimeout magic. This time we need to wait for a render and dom update for selection to work.
+      setTimeout(() => this.selectLayer(this.props.app.layers.length - 1), 10);
     });
   }
   getImageRef = i => {
@@ -343,6 +342,7 @@ class AppUI extends React.Component {
           onClick={() => {
             this.props.app.toggleVisibility(this.state.selectedIndex);
             this.forceUpdate();
+            // :( More setTimeout magic. This time we need to wait for a render and dom update before updating the map.
             setTimeout(() => this.updateMap(), 10);
           }}
         >
