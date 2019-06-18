@@ -67,6 +67,12 @@ class Preview extends React.Component {
     super(props);
     this.canvasRef = React.createRef();
     this.scene = new THREE.Scene();
+    this.uvCanvas = document.createElement("canvas");
+    this.uvCanvas.width = 512;
+    this.uvCanvas.height = 512;
+    this.ctx = this.uvCanvas.getContext("2d");
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeStyle = "grey";
   }
   componentDidMount() {
     this.initRenderer();
@@ -110,28 +116,27 @@ class Preview extends React.Component {
         mesh.material.map.needsUpdate = true;
       };
 
-      /*
-        const geo = mesh.geometry;
-        const uvs = geo.attributes.uv.array;
-        const index = geo.index.array;
-        const w = 512;
-        const h = 512;
+      const geo = mesh.geometry;
+      const uvs = geo.attributes.uv.array;
+      const index = geo.index.array;
+      const w = 512;
+      const h = 512;
 
-        for (let i = 0; i < index.length; i += 3) {
-          let idx = index[i] * 2;
-          ctx.moveTo(uvs[idx] * w, uvs[idx + 1] * h);
-          idx = index[i + 1] * 2;
-          ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
-          idx = index[i + 2] * 2;
-          ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
-          idx = index[i] * 2;
-          ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
-        }
-        ctx.stroke();
+      for (let i = 0; i < index.length; i += 3) {
+        let idx = index[i] * 2;
+        this.ctx.moveTo(uvs[idx] * w, uvs[idx + 1] * h);
+        idx = index[i + 1] * 2;
+        this.ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
+        idx = index[i + 2] * 2;
+        this.ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
+        idx = index[i] * 2;
+        this.ctx.lineTo(uvs[idx] * w, uvs[idx + 1] * h);
+      }
+      this.ctx.stroke();
 
-        uvImage.image(uvCanvas);
-        uvImage.draw();
-      */
+      this.uvCanvas.toBlob(blob => {
+        this.props.onUvImageUpdated(URL.createObjectURL(blob));
+      });
     });
   }
   render() {
@@ -215,7 +220,7 @@ class AppUI extends React.Component {
       transformer.getLayer().batchDraw();
 
       this.updateMap();
-    }, 20);
+    });
   };
   deleteSelectedLayer = () => {
     const index = this.state.selectedIndex;
@@ -232,7 +237,6 @@ class AppUI extends React.Component {
       layer.scaleY = scaleY;
       layer.rotation = e.currentTarget.rotation();
       this.forceUpdate();
-      this.transformerRef.current.getLayer().batchDraw();
       this.updateMap();
     };
   };
@@ -263,6 +267,7 @@ class AppUI extends React.Component {
       y: -(mousePointTo.y - stage.getPointerPosition().y / newScale) * newScale
     };
     stage.position(newPos);
+    // Force the transformer to update its anchor dimensions as we zoom.
     this.transformerRef.current.forceUpdate();
     stage.batchDraw();
   };
@@ -271,10 +276,10 @@ class AppUI extends React.Component {
     const layersReversed = Array.from(layers).reverse();
     return (
       <div>
-        <Preview map={this.state.mapSrc} />
+        <Preview map={this.state.mapSrc} onUvImageUpdated={uvImageSrc => this.setState({ uvImageSrc })} />
         <Konva.Stage className="stage hidden" width={512} height={512} ref={this.mapStage}>
           <Konva.Layer>
-            <Konva.Rect fill="black" width={512} height={512} />
+            <Konva.Rect fill="white" width={512} height={512} />
           </Konva.Layer>
           {layers.map((layer, i) => {
             return (
@@ -294,12 +299,11 @@ class AppUI extends React.Component {
         </Konva.Stage>
         <Konva.Stage className="stage" width={512} height={512} draggable="true" onWheel={this.zoomStage}>
           <Konva.Layer>
-            <Konva.Rect fill="black" width={512} height={512} />
-          </Konva.Layer>
-          {layers.map((layer, i) => {
-            return (
-              <Konva.Layer key={i}>
+            <Konva.Rect fill="white" width={512} height={512} />
+            {layers.map((layer, i) => {
+              return (
                 <ImageNode
+                  key={i}
                   src={layer.src}
                   ref={this.getImageRef(i)}
                   onMouseDown={() => this.selectLayer(i)}
@@ -313,21 +317,10 @@ class AppUI extends React.Component {
                   onDragMove={this.layerUpdated(layer)}
                   onTransform={this.layerUpdated(layer)}
                 />
-              </Konva.Layer>
-            );
-          })}
-          <Konva.Layer>
-            <Konva.Transformer
-              ref={this.transformerRef}
-              onTransform={() => {
-                // Since our transformer is an a different layer than the node it's attached to, we have to update
-                // it manually.
-                this.transformerRef.current
-                  .getNode()
-                  .getLayer()
-                  .batchDraw();
-              }}
-            />
+              );
+            })}
+            <ImageNode src={this.state.uvImageSrc} globalCompositeOperation="difference" listening={false} />
+            <Konva.Transformer ref={this.transformerRef} />
           </Konva.Layer>
         </Konva.Stage>
         <button
@@ -353,7 +346,7 @@ class AppUI extends React.Component {
             this.props.app.toggleVisibility(this.state.selectedIndex);
             this.forceUpdate();
             // :( More setTimeout magic. This time we need to wait for a render and dom update before updating the map.
-            setTimeout(() => this.updateMap(), 20);
+            setTimeout(() => this.updateMap(), 0);
           }}
         >
           hide
@@ -384,19 +377,6 @@ window.app = new App();
 ReactDOM.render(<AppUI app={window.app} />, document.getElementById("root"));
 
 /*
-const uvLayer = new Konva.FastLayer();
-uvLayer.name("uvs");
-stage.add(uvLayer);
-updateLayers();
-const uvCanvas = document.createElement("canvas");
-uvCanvas.width = WIDTH;
-uvCanvas.height = HEIGHT;
-const uvImage = new Konva.Image({ image: uvCanvas })
-uvLayer.add(uvImage);
-const ctx = uvCanvas.getContext("2d");
-ctx.lineWidth = 1;
-ctx.strokeStyle = "lightgrey";
-
 const glbfile = document.getElementById("glbfile");
 glbfile.onchange = () => loadGLB(URL.createObjectURL(glbfile.files[0]));
 */
