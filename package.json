@@ -17,12 +17,12 @@
     "file-loader": "^4.0.0",
     "nodemon": "^1.19.1",
     "prettier": "^1.17.1",
-    "webpack": "^4.34.0",
     "webpack-cli": "^3.3.4",
-    "webpack-dev-middleware": "^3.7.0",
     "webpack-dev-server": "^3.7.1"
   },
   "dependencies": {
+    "webpack": "^4.34.0",
+    "webpack-dev-middleware": "^3.7.0",
     "@fortawesome/fontawesome-free": "^5.9.0",
     "classnames": "^2.2.6",
     "css-loader": "^3.0.0",
