@@ -183,7 +183,12 @@ class AppUI extends React.Component {
       this.props.app.add(name, url);
       this.forceUpdate();
       // :( More setTimeout magic. This time we need to wait for a render and dom update for selection to work.
-      setTimeout(() => this.selectLayer(this.props.app.layers.length - 1), 10);
+      setTimeout(() => this.selectLayer(this.props.app.layers.length - 1), 20);
+    });
+    window.addEventListener("keyup", e => {
+      if (e.key === "Delete") {
+        this.deleteSelectedLayer();
+      }
     });
   }
   getImageRef = i => {
@@ -210,7 +215,12 @@ class AppUI extends React.Component {
       transformer.getLayer().batchDraw();
 
       this.updateMap();
-    });
+    }, 20);
+  };
+  deleteSelectedLayer = () => {
+    const index = this.state.selectedIndex;
+    this.props.app.delete(index);
+    this.selectLayer(Math.min(index, this.props.app.layers.length - 1));
   };
   layerUpdated = layer => {
     return e => {
@@ -343,20 +353,12 @@ class AppUI extends React.Component {
             this.props.app.toggleVisibility(this.state.selectedIndex);
             this.forceUpdate();
             // :( More setTimeout magic. This time we need to wait for a render and dom update before updating the map.
-            setTimeout(() => this.updateMap(), 10);
+            setTimeout(() => this.updateMap(), 20);
           }}
         >
           hide
         </button>
-        <button
-          onClick={() => {
-            const index = this.state.selectedIndex;
-            this.props.app.delete(index);
-            this.selectLayer(Math.min(index, this.props.app.layers.length - 1));
-          }}
-        >
-          delete
-        </button>
+        <button onClick={this.deleteSelectedLayer}>delete</button>
         <select
           id="layers"
           size="10"
@@ -382,34 +384,6 @@ window.app = new App();
 ReactDOM.render(<AppUI app={window.app} />, document.getElementById("root"));
 
 /*
-window.addEventListener("dragover", e => e.preventDefault());
-window.addEventListener("drop", async e => {
-  e.preventDefault();
-  const imageEl = document.createElement("img");
-  const image = await imageFromDataTransfer(e.dataTransfer);
-  const { name, url } = image;
-  imageEl.onload = () => {
-    const layer = new Konva.Layer();
-    const image = new Konva.Image({ image: imageEl });
-    image.draggable(true);
-    layer.add(image);
-    layer.name(name);
-    image.on("mousedown", () => switchTransformer(image));
-    stage.add(layer);
-    switchTransformer(image);
-    uvLayer.moveToTop();
-    updateLayers();
-  };
-  imageEl.src = url;
-});
-window.addEventListener("keyup", e => {
-  const selectedOption = window.layers.selectedOptions[0];
-  const selectedNode = selectedOption && selectedOption._node;
-  if (e.key === "Delete" && selectedNode) {
-    selectedNode.remove();
-  }
-});
-
 const uvLayer = new Konva.FastLayer();
 uvLayer.name("uvs");
 stage.add(uvLayer);
