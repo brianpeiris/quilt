@@ -5,6 +5,8 @@ import Konva from "react-konva";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import "@fortawesome/fontawesome-free/css/all.css";
+import * as cx from "classnames";
 
 import { imageFromDataTransfer } from "./utils.js";
 
@@ -83,8 +85,9 @@ class Preview extends React.Component {
     }
   }
   initRenderer() {
-    const renderer = new THREE.WebGLRenderer({ canvas: this.canvasRef.current });
-    renderer.setSize(512, 512);
+    const canvas = this.canvasRef.current;
+    const renderer = new THREE.WebGLRenderer({ canvas });
+    this.renderer = renderer;
     renderer.setClearColor(0xaaaaaa);
 
     const light = new THREE.DirectionalLight();
@@ -93,18 +96,30 @@ class Preview extends React.Component {
     this.scene.add(new THREE.AmbientLight(0xbbbbbb));
 
     const camera = new THREE.PerspectiveCamera();
-    camera.position.set(0, 0.5, 1);
-    camera.aspect = renderer.domElement.width / renderer.domElement.height;
+    this.camera = camera;
+    camera.position.set(0, 0.5, 1.2);
     camera.updateProjectionMatrix();
 
-    const controls = new OrbitControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, canvas);
     controls.enablePan = false;
+    controls.rotateSpeed = 3;
     controls.target.set(0, 0.35, 0);
     controls.update();
 
     renderer.setAnimationLoop(() => renderer.render(this.scene, camera));
     this.loadGLB("https://cdn.glitch.com/31df4c32-0e35-4740-8569-69390991ffeb%2FAvatarBot_Base.glb");
+
+    window.addEventListener("resize", this.resize);
+    this.resize();
   }
+  resize = () => {
+    const canvas = this.canvasRef.current;
+    const w = canvas.parentNode.clientWidth;
+    const h = canvas.parentNode.clientHeight;
+    this.renderer.setSize(w, h);
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+  };
   loadGLB(url) {
     new GLTFLoader().load(url, gltf => {
       if (this.avatar) this.scene.remove(this.avatar);
@@ -174,6 +189,7 @@ class AppUI extends React.Component {
     this.imageRefs = [];
     this.transformerRef = React.createRef();
     this.mapStage = React.createRef();
+    this.stageRef = React.createRef();
   }
   state = {
     selectedIndex: "",
@@ -195,7 +211,21 @@ class AppUI extends React.Component {
         this.deleteSelectedLayer();
       }
     });
+    window.addEventListener("resize", this.resize);
+    this.resize();
   }
+  resize = () => {
+    const stage = this.stageRef.current;
+    const container = stage.getContainer();
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    stage.width(w);
+    stage.height(h);
+    const s = h / 512;
+    stage.x(w / 2 - (512 / 2) * s);
+    stage.scaleX(s);
+    stage.scaleY(s);
+  };
   getImageRef = i => {
     if (!this.imageRefs[i]) {
       this.imageRefs[i] = React.createRef();
@@ -275,11 +305,13 @@ class AppUI extends React.Component {
     const { layers } = this.props.app;
     const layersReversed = Array.from(layers).reverse();
     return (
-      <div>
-        <Preview map={this.state.mapSrc} onUvImageUpdated={uvImageSrc => this.setState({ uvImageSrc })} />
-        <Konva.Stage className="stage hidden" width={512} height={512} ref={this.mapStage}>
+      <div className="container">
+        <div>
+          <Preview map={this.state.mapSrc} onUvImageUpdated={uvImageSrc => this.setState({ uvImageSrc })} />
+        </div>
+        <Konva.Stage className="hidden" width={512} height={512} ref={this.mapStage}>
           <Konva.Layer>
-            <Konva.Rect fill="white" width={512} height={512} />
+            <Konva.Rect fill="black" width={512} height={512} />
           </Konva.Layer>
           {layers.map((layer, i) => {
             return (
@@ -297,9 +329,9 @@ class AppUI extends React.Component {
             );
           })}
         </Konva.Stage>
-        <Konva.Stage className="stage" width={512} height={512} draggable="true" onWheel={this.zoomStage}>
+        <Konva.Stage width={512} height={512} draggable="true" onWheel={this.zoomStage} ref={this.stageRef}>
           <Konva.Layer>
-            <Konva.Rect fill="white" width={512} height={512} />
+            <Konva.Rect fill="black" width={512} height={512} />
             {layers.map((layer, i) => {
               return (
                 <ImageNode
@@ -323,50 +355,84 @@ class AppUI extends React.Component {
             <Konva.Transformer ref={this.transformerRef} />
           </Konva.Layer>
         </Konva.Stage>
-        <button
-          onClick={() => {
-            if (this.props.app.moveDown(this.state.selectedIndex)) {
-              this.selectLayer(this.state.selectedIndex - 1);
-            }
-          }}
-        >
-          down
-        </button>
-        <button
-          onClick={() => {
-            if (this.props.app.moveUp(this.state.selectedIndex)) {
-              this.selectLayer(this.state.selectedIndex + 1);
-            }
-          }}
-        >
-          up
-        </button>
-        <button
-          onClick={() => {
-            this.props.app.toggleVisibility(this.state.selectedIndex);
-            this.forceUpdate();
-            // :( More setTimeout magic. This time we need to wait for a render and dom update before updating the map.
-            setTimeout(() => this.updateMap(), 0);
-          }}
-        >
-          hide
-        </button>
-        <button onClick={this.deleteSelectedLayer}>delete</button>
-        <select
-          id="layers"
-          size="10"
-          onChange={({ target }) => this.selectLayer(layers.length - target.selectedIndex - 1)}
-          value={this.state.selectedIndex}
-        >
-          {layersReversed.map((layer, i) => (
-            <option key={i} value={layers.length - i - 1}>
-              {layer.name} {layer.visible ? "" : "(hidden)"}
-            </option>
-          ))}
-        </select>
-        <a target="_blank" rel="noopener noreferrer" href={this.state.mapSrc}>
-          export
-        </a>
+        {this.props.app.layers.length === 0 && (
+          <div className="start">
+            Drag and drop an image file or URL here,
+            <br />
+            or click on the &#xf067; button in the sidebar.
+          </div>
+        )}
+        <div className="controls">
+          <div className="buttons">
+            <label className="button fas">
+              <input
+                type="file"
+                onChange={e => {
+                  const file = e.target.files[0];
+                  this.props.app.add(file.name, URL.createObjectURL(file));
+                  this.forceUpdate();
+                  // :( More setTimeout magic. This time we need to wait for a render and dom update for selection to work.
+                  setTimeout(() => this.selectLayer(this.props.app.layers.length - 1), 20);
+                  e.target.value = null;
+                }}
+              />
+              &#xf067;
+            </label>
+            <button
+              className="fas"
+              onClick={() => {
+                if (this.props.app.moveUp(this.state.selectedIndex)) {
+                  this.selectLayer(this.state.selectedIndex + 1);
+                }
+              }}
+            >
+              &#xf077;
+            </button>
+            <button
+              className="fas"
+              onClick={() => {
+                if (this.props.app.moveDown(this.state.selectedIndex)) {
+                  this.selectLayer(this.state.selectedIndex - 1);
+                }
+              }}
+            >
+              &#xf078;
+            </button>
+            <button
+              className="fas"
+              onClick={() => {
+                this.props.app.toggleVisibility(this.state.selectedIndex);
+                this.forceUpdate();
+                // :( More setTimeout magic. This time we need to wait for a render and dom update before updating the map.
+                setTimeout(() => this.updateMap(), 0);
+              }}
+            >
+              &#xf070;
+            </button>
+            <button className="fas" onClick={this.deleteSelectedLayer}>
+              &#xf00d;
+            </button>
+          </div>
+          <select
+            className="layers"
+            size="10"
+            onChange={({ target }) => this.selectLayer(layers.length - target.selectedIndex - 1)}
+            value={this.state.selectedIndex}
+          >
+            {layersReversed.map((layer, i) => (
+              <option key={i} value={layers.length - i - 1} className="fas">
+                {layer.name} {layer.visible ? "" : "\uf070"}
+              </option>
+            ))}
+          </select>
+          <a className={cx("export", { disabled: !this.state.mapSrc })} download href={this.state.mapSrc}>
+            &#xf019; Export
+          </a>
+          <div className="logo">
+            <h1>Quilt</h1>
+            <a href="">source code</a>
+          </div>
+        </div>
         {/*<div style={{ whiteSpace: "pre" }}>{JSON.stringify(this.props.app, null, 2)}</div>*/}
       </div>
     );

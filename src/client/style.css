@@ -1,43 +1,129 @@
-/* CSS files add styling rules to your content */
-
+html,
+body,
+#root,
+.container {
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
 body {
-  font-family: "Benton Sans", "Helvetica Neue", helvetica, arial, sans-serif;
-  margin: 2em;
-  display: flex;
-  align-items: center;
+  background: #283849;
+  font-family: "Open Sans", sans-serif;
 }
-
-.stage {
-  border: 1px solid black;
+.container {
+  display: grid;
+  grid-template: auto / 20em auto 20em;
+  grid-gap: 2em;
+  padding: 2em;
+  box-sizing: border-box;
 }
-
+.container > div {
+  height: 100%;
+  overflow: hidden;
+  border-radius: 0.5em;
+}
 .hidden {
   display: none;
 }
 
-#stage, #avatar, #controls {
-  margin: 1em;
+.layers {
+  width: 100%;
+  background: #aaa;
+  border: none;
+  border-radius: 0.2em;
 }
-#export { display: block; }
 
-#controls {
+.buttons {
+  display: flex;
+  justify-content: center;
+}
+
+button.fas,
+.button {
+  font-size: 12pt;
+  width: 3em;
+  height: 2em;
+  margin: 0.7em 0.4em;
+  background: #aaa;
+  border: none;
+  border-radius: 0.2em;
+}
+button.fas:hover, .button.fas:hover {
+  background: #686767;
+}
+
+.button.fas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button input {
+  display: none;
+}
+
+option.fas {
+  font-family: "Font Awesome 5 Free", "Open Sans", sans-serif;
+  display: block;
+  font-weight: normal;
+  font-size: 12pt;
+  padding: 0.5em;
+}
+
+.export {
+  font-family: "Font Awesome 5 Free", "Open Sans", sans-serif;
+  font-size: 16pt;
+  font-weight: bold;
+  margin: 1em;
+  color: white;
+}
+.export.disabled {
+  color: #4d4c4c;
+}
+
+.controls {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-@media(max-width: 1400px) {
-  body {flex-direction: column;}
+.logo {
+  flex: 1;
+  justify-items: inherit;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
 }
 
-#controls > * {
-  margin: 1em;
-  text-align: center;
+.logo > h1 {
+  color: white;
+  font-weight: bold;
+  font-size: 40pt;
+  margin: 0.2em;
 }
 
-#layers { width: 13em; }
+.logo > a {
+  color: #aaa;
+}
 
-h1 {
-  font-style: italic;
-  color: #373fff;
+.container > .start {
+  font-family: "Font Awesome 5 Free", "Open Sans", sans-serif;
+  position: absolute;
+  width: 20em;
+  height: 5em;
+  background: #aaa;
+  opacity: 0.9;
+  border-radius: 1em;
+  display: flex;
+  align-items: center;
+  padding: 1em;
+  line-height: 2em;
+  top: 50%;
+  left: 50%;
+  margin-left: -10em;
+  margin-top: -5em;
+  color: white;
+  font-size: 16pt;
+  font-weight: bold;
 }
