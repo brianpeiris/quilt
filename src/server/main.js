@@ -16,7 +16,7 @@ const port = process.env.PORT || 3000;
 app.get("/proxy/:url", async (req, res) => {
   const { url } = req.params;
   const type = await fetch(url, { method: "HEAD" }).then(r => r.headers.get("content-type"));
-  if (type.startsWith("text/html")) {
+  if (type && type.startsWith("text/html")) {
     try {
       const og = await ogs({ url, onlyGetOpenGraphInfo: true, headers: { "user-agent": "Firefox/99" } });
       const { ogImage } = og.data;

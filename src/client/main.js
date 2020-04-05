@@ -70,8 +70,8 @@ class Preview extends React.Component {
     this.canvasRef = React.createRef();
     this.scene = new THREE.Scene();
     this.uvCanvas = document.createElement("canvas");
-    this.uvCanvas.width = 512;
-    this.uvCanvas.height = 512;
+    this.uvCanvas.width = 1024;
+    this.uvCanvas.height = 1024;
     this.ctx = this.uvCanvas.getContext("2d");
     this.ctx.lineWidth = 1;
     this.ctx.strokeStyle = "grey";
@@ -107,7 +107,8 @@ class Preview extends React.Component {
     controls.update();
 
     renderer.setAnimationLoop(() => renderer.render(this.scene, camera));
-    this.loadGLB("https://cdn.glitch.com/31df4c32-0e35-4740-8569-69390991ffeb%2FAvatarBot_Base.glb");
+    const gltfURL = new URLSearchParams(location.search).get("gltf");
+    this.loadGLB(gltfURL ? `/proxy/${encodeURIComponent(gltfURL)}` : "/default-avatar.glb");
 
     window.addEventListener("resize", this.resize);
     this.resize();
@@ -121,12 +122,22 @@ class Preview extends React.Component {
     this.camera.updateProjectionMatrix();
   };
   loadGLB(url) {
+    THREE.DefaultLoadingManager.setURLModifier(url => {
+      if (url.startsWith("http")) {
+        return `/proxy/${encodeURIComponent(url)}`;
+      } else {
+        return url;
+      }
+    });
     new GLTFLoader().load(url, gltf => {
       if (this.avatar) this.scene.remove(this.avatar);
       this.avatar = gltf.scene;
       this.scene.add(this.avatar);
       const mesh = gltf.scene.getObjectByProperty("type", "SkinnedMesh");
       this.mapImage = mesh.material.map.image;
+      if (this.mapImage.src && !this.mapImage.src.startsWith("blob:")) {
+        this.props.onBaseImageLoaded(this.mapImage.src);
+      }
       this.mapImage.onload = () => {
         mesh.material.map.needsUpdate = true;
       };
@@ -134,8 +145,8 @@ class Preview extends React.Component {
       const geo = mesh.geometry;
       const uvs = geo.attributes.uv.array;
       const index = geo.index.array;
-      const w = 512;
-      const h = 512;
+      const w = 1024;
+      const h = 1024;
 
       for (let i = 0; i < index.length; i += 3) {
         let idx = index[i] * 2;
@@ -221,8 +232,8 @@ class AppUI extends React.Component {
     const h = container.clientHeight;
     stage.width(w);
     stage.height(h);
-    const s = h / 512;
-    stage.x(w / 2 - (512 / 2) * s);
+    const s = h / 1024;
+    stage.x(w / 2 - (1024 / 2) * s);
     stage.scaleX(s);
     stage.scaleY(s);
   };
@@ -307,11 +318,16 @@ class AppUI extends React.Component {
     return (
       <div className="container">
         <div>
-          <Preview map={this.state.mapSrc} onUvImageUpdated={uvImageSrc => this.setState({ uvImageSrc })} />
+          <Preview
+            map={this.state.mapSrc}
+            onBaseImageLoaded={baseImageSrc => this.setState({ baseImageSrc })}
+            onUvImageUpdated={uvImageSrc => this.setState({ uvImageSrc })}
+          />
         </div>
-        <Konva.Stage className="hidden" width={512} height={512} ref={this.mapStage}>
+        <Konva.Stage className="hidden" width={1024} height={1024} ref={this.mapStage}>
           <Konva.Layer>
-            <Konva.Rect fill="black" width={512} height={512} />
+            <Konva.Rect fill="black" width={1024} height={1024} />
+            <ImageNode src={this.state.baseImageSrc} listening={false} />
           </Konva.Layer>
           {layers.map((layer, i) => {
             return (
@@ -329,9 +345,10 @@ class AppUI extends React.Component {
             );
           })}
         </Konva.Stage>
-        <Konva.Stage width={512} height={512} draggable="true" onWheel={this.zoomStage} ref={this.stageRef}>
+        <Konva.Stage width={1024} height={1024} draggable="true" onWheel={this.zoomStage} ref={this.stageRef}>
           <Konva.Layer>
-            <Konva.Rect fill="black" width={512} height={512} />
+            <Konva.Rect fill="black" width={1024} height={1024} />
+            <ImageNode src={this.state.baseImageSrc} listening={false} />
             {layers.map((layer, i) => {
               return (
                 <ImageNode
@@ -435,7 +452,6 @@ class AppUI extends React.Component {
             </a>
           </div>
         </div>
-        {/*<div style={{ whiteSpace: "pre" }}>{JSON.stringify(this.props.app, null, 2)}</div>*/}
       </div>
     );
   }
@@ -443,8 +459,3 @@ class AppUI extends React.Component {
 
 window.app = new App();
 ReactDOM.render(<AppUI app={window.app} />, document.getElementById("root"));
-
-/*
-const glbfile = document.getElementById("glbfile");
-glbfile.onchange = () => loadGLB(URL.createObjectURL(glbfile.files[0]));
-*/
